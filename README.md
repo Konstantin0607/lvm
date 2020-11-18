@@ -1,179 +1,190 @@
-# lvm
-захожу в папку с Vagrantfile,
+lvm
+#скачиваем Vagrantfile
 
-# vagrant up
+git clone https://github.com/MaximMiklyaev/newLVM.git
 
-# vagrant ssh
+#захожу в папку с Vagrantfile,
 
-затем работаю под sudo
+vagrant up
 
-# sudo -i
-устанавливаю пакет xfsdump
+ vagrant ssh
 
-# yum install xfsdump
+#затем работаю под sudo
 
-готовлю временый том для раздела
+sudo -i
 
-# pvcreate /dev/sdb
+#устанавливаю пакет xfsdump
 
-# vgcreate vg_root /dev/sdb
+yum install xfsdump
 
-# lvcreate -n lv_root -l +100%FREE /dev/vg_root
+#готовлю временый том для раздела
 
-создаю на нем файловую систему
+pvcreate /dev/sdb
 
-# mkfs.xfs /dev/vg_root/lv_root
+vgcreate vg_root /dev/sdb
 
-и смонтирую его, чтобы перенести туда данные
+lvcreate -n lv_root -l +100%FREE /dev/vg_root
 
-# mount /dev/vg_root/lv_root /mnt
+#создаю на нем файловую систему
 
-копирую все данные с раздела в /mnt
+mkfs.xfs /dev/vg_root/lv_root
 
-# xfsdump -J - /dev/VolGroup00/LogVol00 | xfsrestore -J - /mnt
+#и смонтирую его, чтобы перенести туда данные
 
-проверяю скопировались данные
+mount /dev/vg_root/lv_root /mnt
 
-# ls /mnt/
+#копирую все данные с раздела в /mnt
 
-после переконфигурирую grub для того, чтобы при старте перейти в новый
-Сымитируем текущий root и сделаем в него chroot, обновим grub
+xfsdump -J - /dev/VolGroup00/LogVol00 | xfsrestore -J - /mnt
 
-# for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
+#проверяю скопировались данные
 
-# chroot /mnt/
+ls /mnt/
 
-# grub2-mkconfig -o /boot/grub2/grub.cfg
+#после переконфигурирую grub для того, чтобы при старте перейти в новый
+#Сымитируем текущий root и сделаем в него chroot, обновим grub
 
-Обновим образ initrd.
+for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
 
-# cd /boot ; for i in `ls initramfs-*img`; do dracut -v $i `echo $i|sed "s/initramfs-//g;
+chroot /mnt/
+
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+#Обновим образ initrd.
+
+cd /boot ; for i in `ls initramfs-*img`; do dracut -v $i `echo $i|sed "s/initramfs-//g;
 s/.img//g"` --force; done
 
-для того, чтобы при загрузке был смонтирован нужный root нужно в файле
-/boot/grub2/grub.cfg заменить rd.lvm.lv=VolGroup00/LogVol00 на rd.lvm.lv=vg_root/lv_root
+#для того, чтобы при загрузке был смонтирован нужный root нужно в файле
+#/boot/grub2/grub.cfg заменить rd.lvm.lv=VolGroup00/LogVol00 на rd.lvm.lv=vg_root/lv_root
 
-я скачал nano
+#я скачал nano
 
-# yum install nano
+yum install nano
 
-# nano /boot/grub2/grub.cfg
+nano /boot/grub2/grub.cfg
 
-меняю rd.lvm.lv=VolGroup00/LogVol00 на rd.lvm.lv=vg_root/lv_root и сохраняю
-перезагружаюсь новым рутом
+#меняю rd.lvm.lv=VolGroup00/LogVol00 на rd.lvm.lv=vg_root/lv_root и сохраняю
+#перезагружаюсь новым рутом
 
-# reboot
+reboot
 
-смотрю
+#проверяем что система загрузилась с новым root томом
 
-# lsblk
+lsblk
 
-Теперь нужно изменить размер старой VG и вернуть на него root. Для этого удаляем
-старый LV размеров в 40G и создаем новый на 8G
+#Теперь нужно изменить размер старой VG и вернуть на него root. Для этого удаляем
+#старый LV размеров в 40G и создаем новый на 8G
 
-# lvremove /dev/VolGroup00/LogVol00 [y]
+lvremove /dev/VolGroup00/LogVol00 [y]
 
-# lvcreate -n VolGroup00/LogVol00 -L 8G /dev/VolGroup00 [y]
+lvcreate -n VolGroup00/LogVol00 -L 8G /dev/VolGroup00 [y]
 
-Проделываем на нем те же операции, что и в первый раз
+#Проделываем на нем те же операции, что и в первый раз
 
-# mkfs.xfs /dev/VolGroup00/LogVol00
+mkfs.xfs /dev/VolGroup00/LogVol00
 
-# mount /dev/VolGroup00/LogVol00 /mnt
+mount /dev/VolGroup00/LogVol00 /mnt
 
-# xfsdump -J - /dev/vg_root/lv_root | xfsrestore -J - /mnt
+xfsdump -J - /dev/vg_root/lv_root | xfsrestore -J - /mnt
 
-Так же как в первый раз переконфигурирую grub, за исключением правки /etc/grub2/grub.cfg
+#Так же как в первый раз переконфигурирую grub, за исключением правки /etc/grub2/grub.cfg
 
-# for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
+for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
 
-# chroot /mnt/
+chroot /mnt/
 
-# grub2-mkconfig -o /boot/grub2/grub.cfg
+grub2-mkconfig -o /boot/grub2/grub.cfg
 
-# cd /boot ; for i in `ls initramfs-*img`; do dracut -v $i `echo $i|sed "s/initramfs-//g;
+cd /boot ; for i in `ls initramfs-*img`; do dracut -v $i `echo $i|sed "s/initramfs-//g;
 s/.img//g"` --force; done
 
-Пока не перезагружаюсь и не выхожу из под chroot - потому как можно заодно перенести /var
-На свободных дисках создаю зеркало
+#Пока не перезагружаюсь и не выхожу из под chroot - потому как можно заодно перенести /var
+#На свободных дисках создаю зеркало
 
-# pvcreate /dev/sdc /dev/sdd
+pvcreate /dev/sdc /dev/sdd
 
-# vgcreate vg_var /dev/sdc /dev/sdd
+vgcreate vg_var /dev/sdc /dev/sdd
 
-# lvcreate -L 950M -m1 -n lv_var vg_var
+lvcreate -L 950M -m1 -n lv_var vg_var
 
-Создю на нем ФС и перемещаю туда /var
+#Создю на нем ФС и перемещаю туда /var
 
-# mkfs.ext4 /dev/vg_var/lv_var
+mkfs.ext4 /dev/vg_var/lv_var
 
-# mount /dev/vg_var/lv_var /mnt
+mount /dev/vg_var/lv_var /mnt
 
-# cp -aR /var/* /mnt/
+cp -aR /var/* /mnt/
 
-# rsync -avHPSAX /var/ /mnt/
+rsync -avHPSAX /var/ /mnt/
 
-На всякий случай сохраняю содержимое старого var (или же можно его просто удалить)
+#На всякий случай сохраняю содержимое старого var (или же можно его просто удалить)
 
-# mkdir /tmp/oldvar && mv /var/* /tmp/oldvar
+mkdir /tmp/oldvar && mv /var/* /tmp/oldvar
 
-Ну и монтирую новый var в каталог /var
+#Ну и монтирую новый var в каталог /var
 
-# umount /mnt
+umount /mnt
 
-# mount /dev/vg_var/lv_var /var
+mount /dev/vg_var/lv_var /var
 
-Правлю fstab для автоматического монтирования /var
+#Правлю fstab для автоматического монтирования /var
 
-# echo "`blkid | grep var: | awk '{print $2}'` /var ext4 defaults 0 0" >> /etc/fstab
+echo "`blkid | grep var: | awk '{print $2}'` /var ext4 defaults 0 0" >> /etc/fstab
 
-После чего можно успешно перезагружаться в новый (уменьшенный root) и удалять
-временную Volume Group
+#После чего можно успешно перезагружаться в новый (уменьшенный root) и удалять
+#временную Volume Group
 
-# lvremove /dev/vg_root/lv_root
+lvremove /dev/vg_root/lv_root
 
-# vgremove /dev/vg_root
+vgremove /dev/vg_root
 
-# pvremove /dev/sdb
+pvremove /dev/sdb
 
-Выделяю том под /home по тому же принципу что делал для /var
+#Выделяю том под /home по тому же принципу что делал для /var
 
-# lvcreate -n LogVol_Home -L 2G /dev/VolGroup00
+lvcreate -n LogVol_Home -L 2G /dev/VolGroup00
 
-# mkfs.xfs /dev/VolGroup00/LogVol_Home
+mkfs.xfs /dev/VolGroup00/LogVol_Home
 
-# mount /dev/VolGroup00/LogVol_Home /mnt/
+mount /dev/VolGroup00/LogVol_Home /mnt/
 
-# cp -aR /home/* /mnt/
+cp -aR /home/* /mnt/
 
-# rm -rf /home/*
+rm -rf /home/*
 
-# umount /mnt
+umount /mnt
 
-# mount /dev/VolGroup00/LogVol_Home /home/
+mount /dev/VolGroup00/LogVol_Home /home/
 
-Правлю fstab для автоматического монтирования /home
+#Правлю fstab для автоматического монтирования /home
 
-# echo "`blkid | grep Home | awk '{print $2}'` /home xfs defaults 0 0" >> /etc/fstab
+echo "`blkid | grep Home | awk '{print $2}'` /home xfs defaults 0 0" >> /etc/fstab
 
 /home - сделать том для снапшотов
 
-Сгенерирую файлы в /home/
+#Сгенерирую файлы в /home/
 
-# touch /home/file{1..20}
+touch /home/file{1..20}
 
-Снять снапшот
+#Снять снапшот
 
-# lvcreate -L 100MB -s -n home_snap /dev/VolGroup00/LogVol_Home
+lvcreate -L 100MB -s -n home_snap /dev/VolGroup00/LogVol_Home
 
-Удалить часть файлов
+#Удалить часть файлов
 
-# rm -f /home/file{11..20}
+rm -f /home/file{11..20}
 
-Процесс восстановления со снапшота
+#Процесс восстановления со снапшота
 
-# umount /home
+umount /home
 
-# lvconvert --merge /dev/VolGroup00/home_snap
+lvconvert --merge /dev/VolGroup00/home_snap
 
-# mount /home
+mount /home
+
+#проверяю восстановились ли файлы
+
+ls /home/
+
+
