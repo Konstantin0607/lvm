@@ -1,7 +1,7 @@
 lvm
 #скачиваем Vagrantfile
 
-git clone https://github.com/MaximMiklyaev/newLVM.git
+https://gitlab.com/otus_linux/stands-03-lvm
 
 #захожу в папку с Vagrantfile,
 
