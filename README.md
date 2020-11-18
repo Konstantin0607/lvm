@@ -1,7 +1,9 @@
 lvm
 #скачиваем Vagrantfile
 
+
    https://gitlab.com/otus_linux/stands-03-lvm
+   
 
 #захожу в папку с Vagrantfile,
 
