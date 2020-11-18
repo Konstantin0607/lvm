@@ -1,0 +1,9 @@
+Script started on Wed 18 Nov 2020 03:52:04 PM UTC
+]0;root@lvm:~[?1034h[root@lvm ~]# pwd
+/root
+]0;root@lvm:~[root@lvm ~]# uptime 
+ 15:52:42 up 6 min,  2 users,  load average: 0.01, 0.18, 0.13
+]0;root@lvm:~[root@lvm ~]# exit 
+exit
+
+Script done on Wed 18 Nov 2020 03:52:56 PM UTC
