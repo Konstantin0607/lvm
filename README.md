@@ -1,13 +1,13 @@
 lvm
 #скачиваем Vagrantfile
 
-https://gitlab.com/otus_linux/stands-03-lvm
+   https://gitlab.com/otus_linux/stands-03-lvm
 
 #захожу в папку с Vagrantfile,
 
-vagrant up
+   vagrant up
 
- vagrant ssh
+   vagrant ssh
 
 #затем работаю под sudo
 
